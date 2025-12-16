@@ -1,0 +1,69 @@
+@startuml
+
+enum Role {
+  CLIENT
+  AGENT_BANCAIRE
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum OperationType {
+  DEPOSIT
+  WITHDRAW
+  TRANSFER
+}
+
+enum OperationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+class User {
+  Long id
+  String email
+  String password
+  Role role
+}
+
+class Account {
+  Long id
+  String accountNumber
+  BigDecimal balance
+  AccountStatus status
+}
+
+class Operation {
+  Long id
+  BigDecimal amount
+  OperationType type
+  OperationStatus status
+  LocalDateTime createdAt
+}
+
+class Document {
+  Long id
+  String filename
+  String fileType
+  byte[] data
+}
+
+class OperationValidation {
+  Long id
+  boolean approved
+  String comment
+  LocalDateTime validatedAt
+}
+
+User "1" -- "0..*" Account : owns
+Account "1" -- "0..*" Operation : contains
+Operation "1" -- "0..*" Document : has
+Operation "1" -- "0..1" OperationValidation : validated by
+User "1" -- "0..*" OperationValidation : agent
+
+@enduml
