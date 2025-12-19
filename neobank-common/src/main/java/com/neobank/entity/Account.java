@@ -1,9 +1,6 @@
 package com.neobank.entity;
 
-import com.neobank.entity.User;
-import com.neobank.entity.Operation;
 import jakarta.persistence.*;
-import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
 import java.util.List;

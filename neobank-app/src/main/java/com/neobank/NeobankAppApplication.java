@@ -1,4 +1,4 @@
-package com.neobank.neobankapp;
+package com.neobank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,9 +6,6 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@ComponentScan(basePackages = "com.neobank")
-@EnableJpaRepositories(basePackages = "com.neobank")
-@EntityScan(basePackages = "com.neobank")
 @SpringBootApplication
 public class NeobankAppApplication {
 	public static void main(String[] args) {

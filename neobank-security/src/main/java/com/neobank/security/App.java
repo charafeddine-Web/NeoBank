@@ -1,4 +1,4 @@
-package com.neobank;
+package com.neobank.security;
 
 /**
  * Hello world!

@@ -1,4 +1,4 @@
-package com.neobank.neobankapp.controller;
+package com.neobank.controller;
 
 
 import org.springframework.web.bind.annotation.RestController;

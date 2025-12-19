@@ -1,4 +1,4 @@
-package com.neobank.SecurityConfig;
+package com.neobank.security.SecurityConfig;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
