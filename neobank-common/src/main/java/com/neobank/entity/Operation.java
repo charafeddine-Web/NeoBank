@@ -2,7 +2,6 @@ package com.neobank.entity;
 
 import com.neobank.enums.OperationStatus;
 import com.neobank.enums.OperationType;
-import com.neobank.entity.Account;
 import jakarta.persistence.*;
 import lombok.Data;
 
