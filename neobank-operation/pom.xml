@@ -44,5 +44,11 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.neobank</groupId>
+            <artifactId>neobank-user</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
