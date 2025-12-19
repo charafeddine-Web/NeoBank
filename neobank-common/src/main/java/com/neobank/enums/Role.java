@@ -1,7 +1,7 @@
 package com.neobank.enums;
 
 public enum Role {
-    Client,
-    Admin,
-    AGENT_BANCAIRE
+    ROLE_CLIENT,
+    ROLE_ADMIN,
+    ROLE_AGENT_BANCAIRE
 }
