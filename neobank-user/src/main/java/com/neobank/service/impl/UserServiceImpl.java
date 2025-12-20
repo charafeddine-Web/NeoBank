@@ -1,7 +1,10 @@
 package com.neobank.service.impl;
 
+import com.neobank.dto.AuthResponse;
+import com.neobank.dto.RegisterRequest;
 import com.neobank.entity.User;
 import com.neobank.exception.UserNotFoundException;
+import com.neobank.mapper.UserMapper;
 import com.neobank.repository.UserRepository;
 import com.neobank.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +17,13 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @Override
-    public User createUser(User user) {
+    public RegisterRequest createUser(RegisterRequest dto) {
+        User user = userMapper.toEntity(dto);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        return userMapper.toDto(userRepository.save(user));
     }
 
     @Override
