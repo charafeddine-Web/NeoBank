@@ -28,10 +28,12 @@ public class SecurityConfig {
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/client/**").hasAnyRole("CLIENT")
+                        .requestMatchers("/api/agent/**").hasAnyRole("AGENT_BANCAIRE")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
