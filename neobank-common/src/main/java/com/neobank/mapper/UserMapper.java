@@ -10,7 +10,7 @@ public interface UserMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "password", ignore = true)
-    @Mapping(target = "role", expression = "java(dto.getRole() != null ? dto.getRole() : com.neobank.enums.Role.ROLE_CLIENT)")
+    @Mapping(target = "role", expression = "java(dto.getRole() != null ? dto.getRole() : com.neobank.enums.Role.CLIENT)")
     User toEntity(RegisterRequest dto);
     RegisterRequest toDto(User user);
 
