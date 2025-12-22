@@ -22,7 +22,7 @@ public class AccountDto {
 
     @NotNull
     @PositiveOrZero
-    private BigDecimal balance;
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @NotNull
     private Long userId;
