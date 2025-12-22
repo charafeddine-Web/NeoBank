@@ -1,7 +1,9 @@
 package com.neobank.enums;
 
 public enum OperationStatus {
+    CREATED,
     PENDING,
-    APPROVED,
+    VALIDATED,
+    EXECUTED,
     REJECTED
 }
