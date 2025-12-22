@@ -3,6 +3,8 @@ package com.neobank.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Entity
 @Table(name = "documents")
@@ -15,8 +17,10 @@ public class Document {
     private String filename;
     private String fileType;
 
-    @Lob
-    private byte[] data;
+    private String storagePath;
+
+
+    private LocalDateTime uploadedAt = LocalDateTime.now();
 
     @ManyToOne
     @JoinColumn(name = "operation_id")

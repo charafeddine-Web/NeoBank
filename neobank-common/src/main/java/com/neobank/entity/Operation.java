@@ -19,6 +19,7 @@ public class Operation {
 
     private BigDecimal amount;
 
+
     @Enumerated(EnumType.STRING)
     private OperationType type;
 
@@ -27,11 +28,26 @@ public class Operation {
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime validatedAt;
+
+    private LocalDateTime executedAt;
+
+
     @ManyToOne
     @JoinColumn(name = "account_id")
     private Account account;
 
+    @ManyToOne
+    @JoinColumn(name = "account_destination_id")
+    private Account accountDestination;
+
     @OneToOne(mappedBy = "operation", cascade = CascadeType.ALL)
     private OperationValidation validation;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (status == null) status = OperationStatus.CREATED;
+    }
 
 }
