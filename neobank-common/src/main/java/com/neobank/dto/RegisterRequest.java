@@ -22,4 +22,7 @@ public class RegisterRequest {
     private String password;
 
     private Role role;
+
+    private boolean active;
+
 }
