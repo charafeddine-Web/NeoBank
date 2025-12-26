@@ -1,25 +1,33 @@
 version: "3.8"
 
 services:
+
   postgres:
     image: postgres:16
-    container_name: neobank-postgres
+    restart: always
     environment:
-      POSTGRES_DB: neobank_db
-      POSTGRES_USER: neobank
-      POSTGRES_PASSWORD: neobank123
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neobank-net
 
   app:
-    build: ./neobank-app
-    container_name: neobank-app
+    image: neobank-app:latest
+    restart: always
     depends_on:
       - postgres
+    env_file:
+      - .env
     ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/neobank_db
-      SPRING_DATASOURCE_USERNAME: neobank
-      SPRING_DATASOURCE_PASSWORD: neobank123
+      - "127.0.0.1:8080:8080"
+    networks:
+      - neobank-net
 
+volumes:
+  postgres_data:
+
+networks:
+  neobank-net:
