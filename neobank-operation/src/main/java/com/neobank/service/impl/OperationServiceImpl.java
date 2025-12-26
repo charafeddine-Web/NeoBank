@@ -6,6 +6,7 @@ import com.neobank.entity.*;
 import com.neobank.enums.OperationStatus;
 import com.neobank.enums.OperationType;
 import com.neobank.enums.Role;
+import com.neobank.mapper.OperationMapper;
 import com.neobank.repository.*;
 import com.neobank.service.OperationService;
 import jakarta.persistence.EntityManager;
@@ -30,10 +31,9 @@ public class OperationServiceImpl implements OperationService {
     private final EntityManager em;
     private final OperationValidationRepository operationValidationRepository;
     private final UserRepository userRepository;
+    private final OperationMapper operationMapper;
 
     private static final BigDecimal THRESHOLD = new BigDecimal("10000");
-
-
 
 
     @Override
@@ -87,20 +87,20 @@ public class OperationServiceImpl implements OperationService {
         }
 
         Operation saved = operationRepository.save(op);
-        return toDto(saved);
+        return operationMapper.toDto(saved);
     }
 
     @Override
     public OperationResponseDto getOperation(Long id) {
         Operation o = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
-        return toDto(o);
+        return operationMapper.toDto(o);
     }
 
     @Override
     public List<OperationResponseDto> listAllOperations() {
         return operationRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(operationMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -109,13 +109,13 @@ public class OperationServiceImpl implements OperationService {
         return operationRepository
                 .findByAccount_User_Email(email)
                 .stream()
-                .map(this::toDto)
+                .map(operationMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<OperationResponseDto> listPendingOperations() {
-        return operationRepository.findAll().stream().filter(o -> o.getStatus() == OperationStatus.PENDING).map(this::toDto).collect(Collectors.toList());
+        return operationRepository.findAll().stream().filter(o -> o.getStatus() == OperationStatus.PENDING).map(operationMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
@@ -164,7 +164,7 @@ public class OperationServiceImpl implements OperationService {
         validation.setOperation(op);
         operationValidationRepository.save(validation);
         Operation saved = operationRepository.save(op);
-        return toDto(saved);
+        return operationMapper.toDto(saved);
     }
 
     @Override
@@ -194,7 +194,7 @@ public class OperationServiceImpl implements OperationService {
         validation.setOperation(op);
         operationValidationRepository.save(validation);
 
-        return toDto(saved);
+        return operationMapper.toDto(saved);
     }
 
     @Override
@@ -219,19 +219,5 @@ public class OperationServiceImpl implements OperationService {
         }
     }
 
-    private OperationResponseDto toDto(Operation o) {
-        return OperationResponseDto.builder()
-                .id(o.getId())
-                .type(o.getType())
-                .amount(o.getAmount())
-                .currency(o.getCurrency())
-                .status(o.getStatus())
-                .createdAt(o.getCreatedAt())
-                .validatedAt(o.getValidatedAt())
-                .executedAt(o.getExecutedAt())
-                .accountId(o.getAccount() != null ? o.getAccount().getId() : null)
-                .destinationAccountId(o.getAccountDestination() != null ? o.getAccountDestination().getId() : null)
-                .build();
-    }
 
 }
