@@ -1,6 +1,10 @@
 package com.neobank.controller;
 
+import com.neobank.dto.AccountAdjustmentDto;
 import com.neobank.dto.AccountDto;
+import com.neobank.dto.OperationCreateDto;
+import com.neobank.dto.OperationResponseDto;
+import com.neobank.enums.OperationType;
 import com.neobank.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,7 +15,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api/admin/accounts")
 @RequiredArgsConstructor
 public class AccountController {
 
@@ -45,4 +49,16 @@ public class AccountController {
         accountService.deleteAccount(id);
         return ResponseEntity.noContent().build();
     }
+
+
+//    @PostMapping("/{id}/adjustment")
+//    public ResponseEntity<OperationResponseDto> adjustAccount(@PathVariable Long id, @Valid @RequestBody AccountAdjustmentDto dto) {
+//        OperationCreateDto opDto = OperationCreateDto.builder()
+//                .type(dto.getAmount().signum() >= 0 ? OperationType.DEPOSIT : OperationType.WITHDRAWAL)
+//                .amount(dto.getAmount().abs())
+//                .accountId(id)
+//                .build();
+//        OperationResponseDto opResp = operationService.createOperation(opDto);
+//        return ResponseEntity.status(201).body(opResp);
+//    }
 }

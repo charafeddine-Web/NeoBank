@@ -51,8 +51,6 @@ public class UserServiceImpl implements UserService {
 
         User savedUser = userRepository.save(user);
 
-        String createdAccountNumber = null;
-
         if (savedUser.getRole() == Role.CLIENT) {
             Account account = new Account();
             account.setUser(savedUser);
@@ -61,19 +59,12 @@ public class UserServiceImpl implements UserService {
                 accountNumber = AccountNumberGenerator.generate();
             } while (accountRepository.existsByAccountNumber(accountNumber) );
 
-
             account.setAccountNumber(accountNumber);
             account.setBalance(BigDecimal.ZERO);
             accountRepository.save(account);
-            createdAccountNumber = accountNumber;
         }
 
-        AuthResponse response = authMapper.toAuthResponse(savedUser);
-        if (createdAccountNumber != null) {
-            response.setAccountNumber(createdAccountNumber);
-        }
-
-        return response;
+        return authMapper.toAuthResponse(savedUser);
     }
 
     @Override
@@ -98,4 +89,17 @@ public class UserServiceImpl implements UserService {
                 .or(() -> userRepository.findByEmail(identifier))
                 .orElseThrow(() -> new UserNotFoundException("User not found : " + identifier));
     }
+
+    @Override
+    public Void deleteUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setActive(false);
+        userRepository.save(user);
+
+        return null;
+    }
+
+
+
 }

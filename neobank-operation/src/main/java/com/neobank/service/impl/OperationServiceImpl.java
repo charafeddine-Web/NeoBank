@@ -1,4 +1,207 @@
 package com.neobank.service.impl;
 
-public class OperationServiceImpl {
+import com.neobank.dto.OperationCreateDto;
+import com.neobank.dto.OperationResponseDto;
+import com.neobank.entity.Account;
+import com.neobank.entity.Document;
+import com.neobank.entity.Operation;
+import com.neobank.enums.OperationStatus;
+import com.neobank.enums.OperationType;
+import com.neobank.repository.AccountRepository;
+import com.neobank.repository.DocumentRepository;
+import com.neobank.repository.OperationRepository;
+import com.neobank.repository.UserRepository;
+import com.neobank.service.OperationService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class OperationServiceImpl implements OperationService {
+
+    private final OperationRepository operationRepository;
+    private final AccountRepository accountRepository;
+    private final DocumentRepository documentRepository;
+    private final EntityManager em;
+
+    private static final BigDecimal THRESHOLD = new BigDecimal("10000");
+
+    public OperationServiceImpl(OperationRepository operationRepository, AccountRepository accountRepository, UserRepository userRepository, DocumentRepository documentRepository, EntityManager em) {
+        this.operationRepository = operationRepository;
+        this.accountRepository = accountRepository;
+        this.documentRepository = documentRepository;
+        this.em = em;
+    }
+
+    @Override
+    @Transactional
+    public OperationResponseDto createOperation(OperationCreateDto dto,  String email) {
+
+        if (dto.getType() == null) throw new IllegalArgumentException("Operation type required");
+        if (dto.getAmount() == null || dto.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("Amount must be positive");
+
+        Account account = accountRepository.findByAccountNumber(dto.getSourceAccountNumber()).orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (!account.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized operation on this account");
+        }
+
+        Account dest = null;
+        if (dto.getType() == OperationType.TRANSFER ) {
+            dest = accountRepository.findByAccountNumber(dto.getDestinationAccountNumber()).orElseThrow(() -> new RuntimeException("Destination account not found"));
+            if (dest.getId().equals(account.getId())) throw new IllegalArgumentException("Destination account must differ");
+        }
+
+        Operation op = new Operation();
+        op.setAmount(dto.getAmount());
+        op.setCurrency(dto.getCurrency() == null ? "MAD" : dto.getCurrency());
+        op.setType(dto.getType());
+        op.setAccount(account);
+        op.setAccountDestination(dest);
+        op.setCreatedAt(LocalDateTime.now());
+
+        if (dto.getAmount().compareTo(THRESHOLD) <= 0) {
+            em.lock(account, LockModeType.PESSIMISTIC_WRITE);
+            if (dto.getType() == OperationType.WITHDRAWAL || dto.getType() == OperationType.TRANSFER) {
+                if (account.getBalance().compareTo(dto.getAmount()) < 0) {
+                    throw new RuntimeException("Insufficient funds");
+                }
+                account.setBalance(account.getBalance().subtract(dto.getAmount()));
+            } else if (dto.getType() == OperationType.DEPOSIT) {
+                account.setBalance(account.getBalance().add(dto.getAmount()));
+            }
+            if (dest != null) {
+                em.lock(dest, LockModeType.PESSIMISTIC_WRITE);
+                dest.setBalance(dest.getBalance().add(dto.getAmount()));
+            }
+            op.setStatus(OperationStatus.VALIDATED);
+            op.setValidatedAt(LocalDateTime.now());
+            op.setExecutedAt(LocalDateTime.now());
+            accountRepository.save(account);
+            if (dest != null) accountRepository.save(dest);
+        } else {
+            op.setStatus(OperationStatus.PENDING);
+        }
+
+        Operation saved = operationRepository.save(op);
+        return toDto(saved);
+    }
+
+    @Override
+    public OperationResponseDto getOperation(Long id) {
+        Operation o = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        return toDto(o);
+    }
+
+    @Override
+    public List<OperationResponseDto> listAllOperations() {
+        return operationRepository.findAll()
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<OperationResponseDto> listOperationsForUser(String email) {
+        return operationRepository
+                .findByAccount_User_Email(email)
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<OperationResponseDto> listPendingOperations() {
+        return operationRepository.findAll().stream().filter(o -> o.getStatus() == OperationStatus.PENDING).map(this::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public OperationResponseDto approveOperation(Long id, String agentUsername, String comment) {
+        Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
+
+        Account account = accountRepository.findById(op.getAccount().getId()).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account dest = null;
+        if (op.getAccountDestination() != null) dest = accountRepository.findById(op.getAccountDestination().getId()).orElseThrow(() -> new RuntimeException("Destination not found"));
+
+        em.lock(account, LockModeType.PESSIMISTIC_WRITE);
+        if (op.getType() == OperationType.WITHDRAWAL || op.getType() == OperationType.TRANSFER) {
+            if (account.getBalance().compareTo(op.getAmount()) < 0) {
+                throw new RuntimeException("Insufficient funds at approval");
+            }
+            account.setBalance(account.getBalance().subtract(op.getAmount()));
+        } else if (op.getType() == OperationType.DEPOSIT) {
+            account.setBalance(account.getBalance().add(op.getAmount()));
+        }
+        if (dest != null) {
+            em.lock(dest, LockModeType.PESSIMISTIC_WRITE);
+            dest.setBalance(dest.getBalance().add(op.getAmount()));
+            accountRepository.save(dest);
+        }
+        accountRepository.save(account);
+
+        op.setStatus(OperationStatus.APPROVED);
+        op.setValidatedAt(LocalDateTime.now());
+        op.setExecutedAt(LocalDateTime.now());
+        Operation saved = operationRepository.save(op);
+        return toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public OperationResponseDto rejectOperation(Long id, String agentUsername, String comment) {
+        Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
+
+        op.setStatus(OperationStatus.REJECTED);
+        op.setValidatedAt(LocalDateTime.now());
+        Operation saved = operationRepository.save(op);
+        return toDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public void uploadDocument(Long operationId, String filename, String contentType, byte[] content, String username) {
+        Operation op = operationRepository.findById(operationId).orElseThrow(() -> new RuntimeException("Operation not found"));
+        if (content == null || content.length == 0) throw new IllegalArgumentException("File empty");
+        if (content.length > 5 * 1024 * 1024) throw new IllegalArgumentException("File too large");
+        if (contentType == null || !(contentType.equals("application/pdf") || contentType.equals("image/jpeg") || contentType.equals("image/png"))) {
+            throw new IllegalArgumentException("Invalid file type");
+        }
+        try {
+            Document d = new Document();
+            d.setFilename(filename);
+            d.setFileType(contentType);
+            d.setStoragePath("/files/" + System.currentTimeMillis() + "-" + filename);
+            d.setUploadedAt(LocalDateTime.now());
+            d.setOperation(op);
+            documentRepository.save(d);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to store document", e);
+        }
+    }
+
+    private OperationResponseDto toDto(Operation o) {
+        return OperationResponseDto.builder()
+                .id(o.getId())
+                .type(o.getType())
+                .amount(o.getAmount())
+                .currency(o.getCurrency())
+                .status(o.getStatus())
+                .createdAt(o.getCreatedAt())
+                .validatedAt(o.getValidatedAt())
+                .executedAt(o.getExecutedAt())
+                .accountId(o.getAccount() != null ? o.getAccount().getId() : null)
+                .destinationAccountId(o.getAccountDestination() != null ? o.getAccountDestination().getId() : null)
+                .build();
+    }
+
 }

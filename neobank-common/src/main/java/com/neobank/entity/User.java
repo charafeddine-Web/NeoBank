@@ -28,9 +28,7 @@ public class User {
 
     private String password;
 
-//    private String fullName;
-
-    private boolean active = true;
+    private boolean active;
 
     @Enumerated(EnumType.STRING)
     private Role role ;
@@ -38,9 +36,11 @@ public class User {
     private LocalDateTime createdAt ;
 
 
+
     @PrePersist
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (role == null) role = Role.CLIENT;
+        if(!active) active = true;
     }
 }

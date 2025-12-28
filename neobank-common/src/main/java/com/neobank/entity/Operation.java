@@ -19,6 +19,7 @@ public class Operation {
 
     private BigDecimal amount;
 
+    private String currency = "MAD";
 
     @Enumerated(EnumType.STRING)
     private OperationType type;
@@ -47,7 +48,7 @@ public class Operation {
     @PrePersist
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
-        if (status == null) status = OperationStatus.CREATED;
+//        if (status == null) status = OperationStatus.CREATED;
     }
 
 }
