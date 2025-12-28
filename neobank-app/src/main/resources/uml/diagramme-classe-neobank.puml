@@ -6,11 +6,7 @@ enum Role {
   ADMIN
 }
 
-enum AccountStatus {
-  ACTIVE
-  SUSPENDED
-  CLOSED
-}
+
 
 enum OperationType {
   DEPOSIT
@@ -26,16 +22,19 @@ enum OperationStatus {
 
 class User {
   Long id
+  String username
   String email
   String password
   Role role
+  boolean active
+  LocalDateTime createdAt
 }
 
 class Account {
   Long id
   String accountNumber
   BigDecimal balance
-  AccountStatus status
+  Long version
 }
 
 class Operation {
@@ -44,13 +43,17 @@ class Operation {
   OperationType type
   OperationStatus status
   LocalDateTime createdAt
+  String currency
+  LocalDateTime validatedAt
+  LocalDateTime executedAt
 }
 
 class Document {
   Long id
   String filename
   String fileType
-  byte[] data
+  String storagePath
+  LocalDateTime uploadedAt
 }
 
 class OperationValidation {

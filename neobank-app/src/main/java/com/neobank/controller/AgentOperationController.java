@@ -1,6 +1,7 @@
 package com.neobank.controller;
 
 import com.neobank.dto.OperationResponseDto;
+import com.neobank.dto.OperationValidationDto;
 import com.neobank.service.OperationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +23,15 @@ public class AgentOperationController {
     }
 
     @PutMapping("/{id}/approve")
-    public ResponseEntity<OperationResponseDto> approve(@PathVariable Long id, Principal principal, @RequestBody(required = false) String comment) {
+    public ResponseEntity<OperationResponseDto> approve(@PathVariable Long id, Principal principal, @RequestBody(required = false) OperationValidationDto request) {
+        String comment = request != null ? request.getComment() : null;
         OperationResponseDto dto = operationService.approveOperation(id, principal.getName(), comment);
         return ResponseEntity.ok(dto);
     }
 
     @PutMapping("/{id}/reject")
-    public ResponseEntity<OperationResponseDto> reject(@PathVariable Long id, Principal principal, @RequestBody(required = false) String comment) {
+    public ResponseEntity<OperationResponseDto> reject(@PathVariable Long id, Principal principal, @RequestBody(required = false) OperationValidationDto request) {
+        String comment = request != null ? request.getComment() : null;
         OperationResponseDto dto = operationService.rejectOperation(id, principal.getName(), comment);
         return ResponseEntity.ok(dto);
     }

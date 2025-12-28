@@ -1,6 +1,7 @@
 package com.neobank.mapper;
 
 import com.neobank.dto.OperationDto;
+import com.neobank.dto.OperationResponseDto;
 import com.neobank.entity.Account;
 import com.neobank.entity.Operation;
 import org.mapstruct.Mapper;
@@ -12,7 +13,7 @@ public interface OperationMapper {
     @Mapping(source = "account.id", target = "accountId")
     @Mapping(source = "accountDestination.id", target = "accountDestinationId")
     @Mapping(source = "validation.id", target = "validationId")
-    OperationDto toDto(Operation operation);
+    OperationResponseDto toDto(Operation operation);
 
     @Mapping(source = "accountId", target = "account.id")
     @Mapping(source = "accountDestinationId", target = "accountDestination.id")

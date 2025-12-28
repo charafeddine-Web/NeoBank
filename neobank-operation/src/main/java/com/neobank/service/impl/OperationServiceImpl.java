@@ -2,18 +2,16 @@ package com.neobank.service.impl;
 
 import com.neobank.dto.OperationCreateDto;
 import com.neobank.dto.OperationResponseDto;
-import com.neobank.entity.Account;
-import com.neobank.entity.Document;
-import com.neobank.entity.Operation;
+import com.neobank.entity.*;
 import com.neobank.enums.OperationStatus;
 import com.neobank.enums.OperationType;
-import com.neobank.repository.AccountRepository;
-import com.neobank.repository.DocumentRepository;
-import com.neobank.repository.OperationRepository;
-import com.neobank.repository.UserRepository;
+import com.neobank.enums.Role;
+import com.neobank.mapper.OperationMapper;
+import com.neobank.repository.*;
 import com.neobank.service.OperationService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class OperationServiceImpl implements OperationService {
 
@@ -30,15 +29,12 @@ public class OperationServiceImpl implements OperationService {
     private final AccountRepository accountRepository;
     private final DocumentRepository documentRepository;
     private final EntityManager em;
+    private final OperationValidationRepository operationValidationRepository;
+    private final UserRepository userRepository;
+    private final OperationMapper operationMapper;
 
     private static final BigDecimal THRESHOLD = new BigDecimal("10000");
 
-    public OperationServiceImpl(OperationRepository operationRepository, AccountRepository accountRepository, UserRepository userRepository, DocumentRepository documentRepository, EntityManager em) {
-        this.operationRepository = operationRepository;
-        this.accountRepository = accountRepository;
-        this.documentRepository = documentRepository;
-        this.em = em;
-    }
 
     @Override
     @Transactional
@@ -91,20 +87,20 @@ public class OperationServiceImpl implements OperationService {
         }
 
         Operation saved = operationRepository.save(op);
-        return toDto(saved);
+        return operationMapper.toDto(saved);
     }
 
     @Override
     public OperationResponseDto getOperation(Long id) {
         Operation o = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
-        return toDto(o);
+        return operationMapper.toDto(o);
     }
 
     @Override
     public List<OperationResponseDto> listAllOperations() {
         return operationRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(operationMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -113,18 +109,25 @@ public class OperationServiceImpl implements OperationService {
         return operationRepository
                 .findByAccount_User_Email(email)
                 .stream()
-                .map(this::toDto)
+                .map(operationMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<OperationResponseDto> listPendingOperations() {
-        return operationRepository.findAll().stream().filter(o -> o.getStatus() == OperationStatus.PENDING).map(this::toDto).collect(Collectors.toList());
+        return operationRepository.findAll().stream().filter(o -> o.getStatus() == OperationStatus.PENDING).map(operationMapper::toDto).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public OperationResponseDto approveOperation(Long id, String agentUsername, String comment) {
+        User agent = userRepository.findByEmail(agentUsername)
+                .orElseThrow(() -> new RuntimeException("Agent not found"));
+
+        if (!agent.getRole().equals(Role.ADMIN)
+                && !agent.getRole().equals(Role.AGENT_BANCAIRE)) {
+            throw new RuntimeException("Only agent or admin can validate operations");
+        }
         Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
         if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
 
@@ -151,20 +154,47 @@ public class OperationServiceImpl implements OperationService {
         op.setStatus(OperationStatus.APPROVED);
         op.setValidatedAt(LocalDateTime.now());
         op.setExecutedAt(LocalDateTime.now());
+
+
+        OperationValidation validation = new OperationValidation();
+        validation.setApproved(true);
+        validation.setComment(comment);
+        validation.setValidatedAt(LocalDateTime.now());
+        validation.setAgent(agent);
+        validation.setOperation(op);
+        operationValidationRepository.save(validation);
         Operation saved = operationRepository.save(op);
-        return toDto(saved);
+        return operationMapper.toDto(saved);
     }
 
     @Override
     @Transactional
     public OperationResponseDto rejectOperation(Long id, String agentUsername, String comment) {
+
+        User agent = userRepository.findByEmail(agentUsername)
+                .orElseThrow(() -> new RuntimeException("Agent not found"));
+
         Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
         if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
+
+        if (!agent.getRole().equals(Role.ADMIN)
+                && !agent.getRole().equals(Role.AGENT_BANCAIRE)) {
+            throw new RuntimeException("Only agent or admin can validate operations");
+        }
 
         op.setStatus(OperationStatus.REJECTED);
         op.setValidatedAt(LocalDateTime.now());
         Operation saved = operationRepository.save(op);
-        return toDto(saved);
+
+        OperationValidation validation = new OperationValidation();
+        validation.setApproved(false);
+        validation.setComment(comment);
+        validation.setValidatedAt(LocalDateTime.now());
+        validation.setAgent(agent);
+        validation.setOperation(op);
+        operationValidationRepository.save(validation);
+
+        return operationMapper.toDto(saved);
     }
 
     @Override
@@ -189,19 +219,5 @@ public class OperationServiceImpl implements OperationService {
         }
     }
 
-    private OperationResponseDto toDto(Operation o) {
-        return OperationResponseDto.builder()
-                .id(o.getId())
-                .type(o.getType())
-                .amount(o.getAmount())
-                .currency(o.getCurrency())
-                .status(o.getStatus())
-                .createdAt(o.getCreatedAt())
-                .validatedAt(o.getValidatedAt())
-                .executedAt(o.getExecutedAt())
-                .accountId(o.getAccount() != null ? o.getAccount().getId() : null)
-                .destinationAccountId(o.getAccountDestination() != null ? o.getAccountDestination().getId() : null)
-                .build();
-    }
 
 }

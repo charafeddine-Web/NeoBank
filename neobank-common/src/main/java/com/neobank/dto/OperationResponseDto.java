@@ -22,8 +22,9 @@ public class OperationResponseDto {
     private OperationStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime validatedAt;
+    private Long validationId;
     private LocalDateTime executedAt;
     private Long accountId;
-    private Long destinationAccountId;
+    private Long accountDestinationId;
 }
 
