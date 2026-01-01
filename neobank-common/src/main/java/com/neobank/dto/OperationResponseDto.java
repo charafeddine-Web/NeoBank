@@ -25,6 +25,8 @@ public class OperationResponseDto {
     private Long validationId;
     private LocalDateTime executedAt;
     private Long accountId;
+    private String sourceAccountNumber;
     private Long accountDestinationId;
+    private String destinationAccountNumber;
 }
 

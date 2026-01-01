@@ -12,6 +12,8 @@ public interface AccountService {
 
     List<AccountDto> listAccounts();
 
+    List<AccountDto> listAccountsForUser(String email);
+
     AccountDto updateAccount(Long id, AccountDto dto);
 
     void deleteAccount(Long id);

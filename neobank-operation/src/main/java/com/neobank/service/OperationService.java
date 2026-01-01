@@ -2,7 +2,7 @@ package com.neobank.service;
 
 import com.neobank.dto.OperationCreateDto;
 import com.neobank.dto.OperationResponseDto;
-
+import com.neobank.entity.Document;
 import java.security.Principal;
 import java.util.List;
 
@@ -23,4 +23,6 @@ public interface OperationService {
     OperationResponseDto rejectOperation(Long id, String agentUsername, String comment);
 
     void uploadDocument(Long operationId, String filename, String contentType, byte[] content, String username);
+
+    Document getDocumentForOperation(Long operationId);
 }

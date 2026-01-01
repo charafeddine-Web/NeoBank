@@ -217,12 +217,27 @@ public class OperationServiceImpl implements OperationService {
             d.setFilename(filename);
             d.setFileType(contentType);
             d.setStoragePath("/files/" + System.currentTimeMillis() + "-" + filename);
+            d.setContent(content);
             d.setUploadedAt(LocalDateTime.now());
             d.setOperation(op);
             documentRepository.save(d);
         } catch (Exception e) {
             throw new RuntimeException("Failed to store document", e);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Document getDocumentForOperation(Long operationId) {
+        Document doc = documentRepository.findByOperation_Id(operationId)
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("Document not found for operation: " + operationId));
+        
+        if (doc.getContent() != null) {
+            int length = doc.getContent().length;
+        }
+        
+        return doc;
     }
 
 

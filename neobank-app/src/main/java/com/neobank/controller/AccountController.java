@@ -49,16 +49,4 @@ public class AccountController {
         accountService.deleteAccount(id);
         return ResponseEntity.noContent().build();
     }
-
-
-//    @PostMapping("/{id}/adjustment")
-//    public ResponseEntity<OperationResponseDto> adjustAccount(@PathVariable Long id, @Valid @RequestBody AccountAdjustmentDto dto) {
-//        OperationCreateDto opDto = OperationCreateDto.builder()
-//                .type(dto.getAmount().signum() >= 0 ? OperationType.DEPOSIT : OperationType.WITHDRAWAL)
-//                .amount(dto.getAmount().abs())
-//                .accountId(id)
-//                .build();
-//        OperationResponseDto opResp = operationService.createOperation(opDto);
-//        return ResponseEntity.status(201).body(opResp);
-//    }
 }

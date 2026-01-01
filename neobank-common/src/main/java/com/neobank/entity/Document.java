@@ -19,6 +19,10 @@ public class Document {
 
     private String storagePath;
 
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    private byte[] content;
+
 
     private LocalDateTime uploadedAt = LocalDateTime.now();
 

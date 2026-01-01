@@ -54,6 +54,13 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public List<AccountDto> listAccountsForUser(String email) {
+        return accountRepository.findByUser_Email(email).stream()
+                .map(accountMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public AccountDto updateAccount(Long id, AccountDto dto) {
         Account existing = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + id));
 

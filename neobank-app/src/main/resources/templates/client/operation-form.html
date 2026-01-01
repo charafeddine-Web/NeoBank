@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+
+<head>
+    <title>New Transaction | NeoBank</title>
+</head>
+
+<body>
+    <section class="max-w-2xl mx-auto py-8">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="bg-slate-50 px-8 py-6 border-b border-slate-100">
+                <h1 class="text-2xl font-bold text-slate-900">Create Transaction</h1>
+                <p class="text-sm text-slate-500">Securely move your funds within or outside NeoBank.</p>
+            </div>
+
+            <div class="p-8">
+                <div th:if="${error}"
+                    class="mb-6 p-4 bg-rose-50 border-l-4 border-rose-500 text-rose-700 text-sm rounded-r-xl"
+                    th:text="${error}"></div>
+
+                <form th:action="@{/client/operations/new}" th:object="${operation}" method="post" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="type" class="block text-sm font-semibold text-slate-700 mb-2">Transaction
+                                Type</label>
+                            <select id="type" th:field="*{type}"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer bg-slate-50 hover:bg-white"
+                                required>
+                                <option value="DEPOSIT">Deposit</option>
+                                <option value="WITHDRAWAL">Withdrawal</option>
+                                <option value="TRANSFER">Transfer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="currency"
+                                class="block text-sm font-semibold text-slate-700 mb-2">Currency</label>
+                            <select id="currency" th:field="*{currency}"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer bg-slate-50 hover:bg-white">
+                                <option value="MAD">Moroccan Dirham (MAD)</option>
+                                <option value="USD">US Dollar (USD)</option>
+                                <option value="EUR">Euro (EUR)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="amount" class="block text-sm font-semibold text-slate-700 mb-2">Amount</label>
+                        <div class="relative">
+                            <input type="number" id="amount" th:field="*{amount}" step="0.01"
+                                class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                placeholder="0.00" required>
+                            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="sourceAccountNumber" class="block text-sm font-semibold text-slate-700 mb-2">Source
+                            Account Number</label>
+                        <input type="text" id="sourceAccountNumber" th:field="*{sourceAccountNumber}"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            placeholder="Enter account number" required>
+                    </div>
+
+                    <div id="destAccountGroup">
+                        <label for="destinationAccountNumber"
+                            class="block text-sm font-semibold text-slate-700 mb-2">Destination Account Number</label>
+                        <input type="text" id="destinationAccountNumber" th:field="*{destinationAccountNumber}"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            placeholder="Required for Transfers only">
+                    </div>
+
+                    <div class="flex items-center justify-end space-x-4 pt-6 border-t border-slate-100">
+                        <a th:href="@{/client/dashboard}"
+                            class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-700">
+                            Cancel
+                        </a>
+                        <button type="submit"
+                            class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                            Confirm Transaction
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>
