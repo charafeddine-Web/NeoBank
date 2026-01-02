@@ -1,4 +1,4 @@
-name: Al Baraka - CD
+name: cd.yml
 
 on:
   workflow_run:
