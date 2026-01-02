@@ -5,6 +5,7 @@ import com.neobank.dto.OperationValidationDto;
 import com.neobank.service.OperationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -16,6 +17,12 @@ import java.util.List;
 public class AgentOperationController {
 
     private final OperationService operationService;
+
+    @GetMapping("/test")
+    public Authentication test(Authentication auth) {
+        return auth;
+    }
+
 
     @GetMapping("/pending")
     public ResponseEntity<List<OperationResponseDto>> listPending() {

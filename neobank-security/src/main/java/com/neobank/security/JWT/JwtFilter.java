@@ -36,6 +36,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
+
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
@@ -60,5 +61,16 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+    }
+
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+
+        return path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/")
+                || path.startsWith("/api/agent/operations/pending")
+                || path.startsWith("/error");
     }
 }
