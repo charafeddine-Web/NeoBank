@@ -2,7 +2,7 @@ name: cd.yml
 
 on:
   workflow_run:
-    workflows: ["cdi.yml"]
+    workflows: ["ci.yml"]
     types:
       - completed
 
