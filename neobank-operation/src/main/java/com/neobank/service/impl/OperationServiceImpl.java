@@ -12,6 +12,11 @@ import com.neobank.service.OperationService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
+import com.neobank.exception.AccountNotFoundException;
+import com.neobank.exception.InsufficientBalanceException;
+import com.neobank.exception.OperationNotAllowedException;
+import com.neobank.exception.UserNotFoundException;
+import com.neobank.exception.OperationNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,15 +48,15 @@ public class OperationServiceImpl implements OperationService {
         if (dto.getType() == null) throw new IllegalArgumentException("Operation type required");
         if (dto.getAmount() == null || dto.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) throw new IllegalArgumentException("Amount must be positive");
 
-        Account account = accountRepository.findByAccountNumber(dto.getSourceAccountNumber()).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = accountRepository.findByAccountNumber(dto.getSourceAccountNumber()).orElseThrow(() -> new AccountNotFoundException("Account not found: " + dto.getSourceAccountNumber()));
 
         if (!account.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("Unauthorized operation on this account");
+            throw new OperationNotAllowedException("Unauthorized operation on this account");
         }
 
         Account dest = null;
         if (dto.getType() == OperationType.TRANSFER ) {
-            dest = accountRepository.findByAccountNumber(dto.getDestinationAccountNumber()).orElseThrow(() -> new RuntimeException("Destination account not found"));
+            dest = accountRepository.findByAccountNumber(dto.getDestinationAccountNumber()).orElseThrow(() -> new AccountNotFoundException("Destination account not found: " + dto.getDestinationAccountNumber()));
             if (dest.getId().equals(account.getId())) throw new IllegalArgumentException("Destination account must differ");
         }
 
@@ -67,7 +72,7 @@ public class OperationServiceImpl implements OperationService {
             em.lock(account, LockModeType.PESSIMISTIC_WRITE);
             if (dto.getType() == OperationType.WITHDRAWAL || dto.getType() == OperationType.TRANSFER) {
                 if (account.getBalance().compareTo(dto.getAmount()) < 0) {
-                    throw new RuntimeException("Insufficient funds");
+                    throw new InsufficientBalanceException("Insufficient funds for operation");
                 }
                 account.setBalance(account.getBalance().subtract(dto.getAmount()));
             } else if (dto.getType() == OperationType.DEPOSIT) {
@@ -92,7 +97,7 @@ public class OperationServiceImpl implements OperationService {
 
     @Override
     public OperationResponseDto getOperation(Long id) {
-        Operation o = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        Operation o = operationRepository.findById(id).orElseThrow(() -> new OperationNotFoundException("Operation not found with ID: " + id));
         return operationMapper.toDto(o);
     }
 
@@ -122,23 +127,24 @@ public class OperationServiceImpl implements OperationService {
     @Transactional
     public OperationResponseDto approveOperation(Long id, String agentUsername, String comment) {
         User agent = userRepository.findByEmail(agentUsername)
-                .orElseThrow(() -> new RuntimeException("Agent not found"));
+                .orElseThrow(() -> new UserNotFoundException("Agent not found: " + agentUsername));
+
 
         if (!agent.getRole().equals(Role.ADMIN)
                 && !agent.getRole().equals(Role.AGENT_BANCAIRE)) {
-            throw new RuntimeException("Only agent or admin can validate operations");
+            throw new OperationNotAllowedException("Only agent or admin can validate operations");
         }
-        Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        Operation op = operationRepository.findById(id).orElseThrow(() -> new OperationNotFoundException("Operation not found: " + id));
         if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
 
-        Account account = accountRepository.findById(op.getAccount().getId()).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = accountRepository.findById(op.getAccount().getId()).orElseThrow(() -> new AccountNotFoundException("Account not found: " + op.getAccount().getId()));
         Account dest = null;
-        if (op.getAccountDestination() != null) dest = accountRepository.findById(op.getAccountDestination().getId()).orElseThrow(() -> new RuntimeException("Destination not found"));
+        if (op.getAccountDestination() != null) dest = accountRepository.findById(op.getAccountDestination().getId()).orElseThrow(() -> new AccountNotFoundException("Destination not found: " + op.getAccountDestination().getId()));
 
         em.lock(account, LockModeType.PESSIMISTIC_WRITE);
         if (op.getType() == OperationType.WITHDRAWAL || op.getType() == OperationType.TRANSFER) {
             if (account.getBalance().compareTo(op.getAmount()) < 0) {
-                throw new RuntimeException("Insufficient funds at approval");
+                throw new InsufficientBalanceException("Insufficient funds at approval time");
             }
             account.setBalance(account.getBalance().subtract(op.getAmount()));
         } else if (op.getType() == OperationType.DEPOSIT) {
@@ -172,14 +178,14 @@ public class OperationServiceImpl implements OperationService {
     public OperationResponseDto rejectOperation(Long id, String agentUsername, String comment) {
 
         User agent = userRepository.findByEmail(agentUsername)
-                .orElseThrow(() -> new RuntimeException("Agent not found"));
+                .orElseThrow(() -> new UserNotFoundException("Agent not found: " + agentUsername));
 
-        Operation op = operationRepository.findById(id).orElseThrow(() -> new RuntimeException("Operation not found"));
+        Operation op = operationRepository.findById(id).orElseThrow(() -> new OperationNotFoundException("Operation not found: " + id));
         if (op.getStatus() != OperationStatus.PENDING) throw new IllegalStateException("Operation not pending");
 
         if (!agent.getRole().equals(Role.ADMIN)
                 && !agent.getRole().equals(Role.AGENT_BANCAIRE)) {
-            throw new RuntimeException("Only agent or admin can validate operations");
+            throw new OperationNotAllowedException("Only agent or admin can validate operations");
         }
 
         op.setStatus(OperationStatus.REJECTED);
@@ -200,7 +206,7 @@ public class OperationServiceImpl implements OperationService {
     @Override
     @Transactional
     public void uploadDocument(Long operationId, String filename, String contentType, byte[] content, String username) {
-        Operation op = operationRepository.findById(operationId).orElseThrow(() -> new RuntimeException("Operation not found"));
+        Operation op = operationRepository.findById(operationId).orElseThrow(() -> new OperationNotFoundException("Operation not found: " + operationId));
         if (content == null || content.length == 0) throw new IllegalArgumentException("File empty");
         if (content.length > 5 * 1024 * 1024) throw new IllegalArgumentException("File too large");
         if (contentType == null || !(contentType.equals("application/pdf") || contentType.equals("image/jpeg") || contentType.equals("image/png"))) {

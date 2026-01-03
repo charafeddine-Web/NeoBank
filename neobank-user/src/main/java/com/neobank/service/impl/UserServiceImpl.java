@@ -99,4 +99,20 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
+
+
+    @Override
+    public void activateUser(Long id) {
+        User user = getById(id);
+        user.setActive(true);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void suspendUser(Long id) {
+        User user = getById(id);
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
 }
