@@ -6,6 +6,8 @@ import com.neobank.entity.User;
 import com.neobank.mapper.AccountMapper;
 import com.neobank.repository.AccountRepository;
 import com.neobank.service.AccountService;
+import com.neobank.exception.AccountNotFoundException;
+import com.neobank.exception.DuplicateResourceException;
 import com.neobank.util.AccountNumberGenerator;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +44,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto getAccount(Long id) {
-        Account account = accountRepository.findById(id).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + id));
         return accountMapper.toDto(account);
     }
 
@@ -53,12 +55,12 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto updateAccount(Long id, AccountDto dto) {
-        Account existing = accountRepository.findById(id).orElseThrow(() -> new RuntimeException("Account not found"));
+        Account existing = accountRepository.findById(id).orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + id));
 
         String dtoAccNumber = dto.getAccountNumber();
         if (dtoAccNumber != null && !dtoAccNumber.isBlank()) {
             if (!dtoAccNumber.equals(existing.getAccountNumber()) && accountRepository.existsByAccountNumber(dtoAccNumber)) {
-                throw new RuntimeException("Account number already exists");
+                throw new DuplicateResourceException("Account number already exists: " + dtoAccNumber);
             }
             existing.setAccountNumber(dtoAccNumber);
         }

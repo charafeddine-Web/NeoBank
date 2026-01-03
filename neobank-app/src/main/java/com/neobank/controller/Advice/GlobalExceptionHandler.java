@@ -1,8 +1,7 @@
 package com.neobank.controller.Advice;
 
 import com.neobank.dto.ErrorResponse;
-import com.neobank.exception.DuplicateResourceException;
-import com.neobank.exception.UserNotFoundException;
+import com.neobank.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -52,9 +51,24 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "Database constraint violation", request.getRequestURI(), null);
     }
 
+    @ExceptionHandler({AccountNotFoundException.class, OperationNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(RuntimeException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientBalance(InsufficientBalanceException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(OperationNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleOperationNotAllowed(OperationNotAllowedException ex, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request.getRequestURI(), null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAll(Exception ex, HttpServletRequest request) {
-        ex.printStackTrace(); // Log the error
+        ex.printStackTrace();
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An internal error occurred", request.getRequestURI(), null);
     }
 
