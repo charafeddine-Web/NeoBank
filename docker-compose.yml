@@ -15,12 +15,16 @@ services:
       - neobank-net
 
   app:
+    build: ./neobank-app
     image: neobank-app:latest
     restart: always
     depends_on:
       - postgres
     env_file:
       - .env
+    environment:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8081/realms/neobank
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/neobank/protocol/openid-connect/certs
     ports:
       - "127.0.0.1:8080:8080"
     networks:

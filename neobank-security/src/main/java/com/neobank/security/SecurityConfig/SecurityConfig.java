@@ -3,6 +3,7 @@ package com.neobank.security.SecurityConfig;
 
 import com.neobank.security.JWT.JwtFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.*;
@@ -65,7 +66,7 @@ public class SecurityConfig {
     public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception {
 
         http
-                .securityMatcher("/api/agent/operations/pending")
+                .securityMatcher("/api/agent/operations/pending/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().hasAuthority("SCOPE_operations.read")
@@ -80,23 +81,32 @@ public class SecurityConfig {
     }
     @Bean
     public JwtAuthenticationConverter keycloakRoleConverter() {
+        JwtGrantedAuthoritiesConverter defaultAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        defaultAuthoritiesConverter.setAuthorityPrefix("SCOPE_");
+        defaultAuthoritiesConverter.setAuthoritiesClaimName("scope");
 
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
-                new JwtGrantedAuthoritiesConverter();
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Collection<GrantedAuthority> authorities = new ArrayList<>(defaultAuthoritiesConverter.convert(jwt));
 
-        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
-        grantedAuthoritiesConverter.setAuthoritiesClaimName(
-                "resource_access.neobank-api.roles"
-        );
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+            if (realmAccess != null && realmAccess.containsKey("roles")) {
+                @SuppressWarnings("unchecked")
+                Collection<String> roles = (Collection<String>) realmAccess.get("roles");
+                roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
+            }
 
-        JwtAuthenticationConverter jwtAuthenticationConverter =
-                new JwtAuthenticationConverter();
-
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(
-                grantedAuthoritiesConverter
-        );
+            return authorities;
+        });
 
         return jwtAuthenticationConverter;
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtFilter> tenantFilterRegistration(JwtFilter filter) {
+        FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
 }
