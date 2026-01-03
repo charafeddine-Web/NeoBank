@@ -64,6 +64,18 @@ public class AdminUserController {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
 
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<Void> activateUser(@PathVariable Long id) {
+        userService.activateUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/{id}/suspend")
+    public ResponseEntity<Void> suspendUser(@PathVariable Long id) {
+        userService.suspendUser(id);
+        return ResponseEntity.ok().build();
+    }
+
 
 }
 
