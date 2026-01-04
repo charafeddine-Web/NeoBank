@@ -11,7 +11,9 @@ import org.mapstruct.Mapping;
 public interface OperationMapper {
 
     @Mapping(source = "account.id", target = "accountId")
+    @Mapping(source = "account.accountNumber", target = "sourceAccountNumber")
     @Mapping(source = "accountDestination.id", target = "accountDestinationId")
+    @Mapping(source = "accountDestination.accountNumber", target = "destinationAccountNumber")
     @Mapping(source = "validation.id", target = "validationId")
     OperationResponseDto toDto(Operation operation);
 

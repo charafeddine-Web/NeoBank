@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::section})}">
+
+<head>
+    <title>Login | NeoBank</title>
+</head>
+
+<body>
+    <section class="flex flex-col items-center justify-center py-12">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+            <div class="text-center mb-10">
+                <h1 class="text-3xl font-bold text-slate-900">Sign In</h1>
+                <p class="text-slate-500 mt-2">Access your secure banking dashboard</p>
+            </div>
+
+            <!-- Messages -->
+            <div th:if="${param.error}"
+                class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded-r-lg">
+                Invalid email or password.
+            </div>
+            <div th:if="${param.logout}"
+                class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 text-sm rounded-r-lg">
+                You have been successfully logged out.
+            </div>
+
+            <form th:action="@{/login}" method="post" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                    <input type="text" name="username" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                        placeholder="name@company.com">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <input type="password" name="password" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
+                        placeholder="••••••••">
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                    <label class="flex items-center text-slate-600">
+                        <input type="checkbox" name="remember-me"
+                            class="rounded text-indigo-600 mr-2 focus:ring-indigo-500">
+                        Remember me
+                    </label>
+                    <a href="#" class="text-indigo-600 font-medium hover:underline">Forgot password?</a>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 transition-all shadow-lg hover:shadow-indigo-200">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-8 pt-8 border-t border-slate-100 text-center text-slate-500 text-sm">
+                Don't have an account? <a href="#" class="text-indigo-600 font-semibold hover:underline">Contact your
+                    bank</a>
+            </div>
+        </div>
+    </section>
+</body>
+
+</html>

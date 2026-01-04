@@ -66,7 +66,7 @@ public class SecurityConfig {
     public SecurityFilterChain oauth2FilterChain(HttpSecurity http) throws Exception {
 
         http
-                .securityMatcher("/api/agent/operations/pending/**")
+                .securityMatcher("/api/agent/operations/pending")
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().hasAuthority("SCOPE_operations.read")
@@ -100,6 +100,36 @@ public class SecurityConfig {
         });
 
         return jwtAuthenticationConverter;
+    }
+
+
+    @Bean
+    @Order(3)
+    public SecurityFilterChain uiFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
+                        .requestMatchers("/client/**").hasRole("CLIENT")
+                        .requestMatchers("/agent/**").hasAnyRole("AGENT_BANCAIRE", "ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll()
+                )
+                .rememberMe(remember -> remember
+                        .key("uniqueAndSecret")
+                        .tokenValiditySeconds(86400)
+                );
+
+        return http.build();
     }
 
     @Bean
